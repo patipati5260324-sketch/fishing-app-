@@ -29,7 +29,7 @@ def get_locs():
     return locs
 
 def post_page():
-    st.title("🎣 釣果投稿・マップ")
+    st.title("🎣投稿/マップ")
     locs = get_locs()
     
     # 画面を左（投稿フォーム）と右（マップ）に分割
@@ -257,7 +257,7 @@ def post_page():
 from utils import deg_to_win # 16方位変換関数をインポートに追加してください
 
 def weather_page():
-    st.title("⚓ 港・地点別コンディション")
+    st.title("⚓ 港情報")
 
     # 1. 固定ポイント（デフォルト地点）
     default_points = [
@@ -345,7 +345,7 @@ def weather_page():
 
 
 def point_page():
-    st.title("📍 新規ポイント登録")
+    st.title("📍 ポイント登録")
     st.write("地図をクリックするとピンが移動し、右側のフォームに座標が反映されます。")
 
     # --- セッション状態の管理 ---
@@ -432,7 +432,7 @@ def point_page():
 # views.py の末尾に追記
 
 def analysis_page():
-    st.title("📊 釣果統計分析")
+    st.title("📊 釣果分析")
     
     # データを取得
     df = get_posts_from_db(limit=1000)
@@ -458,7 +458,7 @@ def analysis_page():
     st.scatter_chart(data=df, x="pressure", y="size", color="tide")
 
 def admin_page():
-    st.title("👥 メンバー・システム管理")
+    st.title("👥 管理")
     
     # --- パスワードチェック ---
     # セッションで認証状態を保持
