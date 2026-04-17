@@ -2,7 +2,6 @@ streamlit
 pandas
 folium
 streamlit-folium
-plotly
 requests
-pillow
 filetype
+Pillow
