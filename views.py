@@ -448,17 +448,17 @@ def analysis_page():
         fish_counts = df["fish"].value_counts()
         st.bar_chart(fish_counts)
 
-    with col2:
+    /*with col2:
         st.subheader("🏆 サイズランキング (TOP10)")
         ranking = df.sort_values(by="size", ascending=False).head(10)
-        st.table(ranking[["fish", "size", "name", "place"]])
+        st.table(ranking[["fish", "size", "name", "place"]])*/
 
     st.divider()
-    st.subheader("📈 潮汐・気圧とサイズの相関")
+    st.subheader("📈 潮汐・気圧とサイズ")
     st.scatter_chart(data=df, x="pressure", y="size", color="tide")
 
 def admin_page():
-    st.title("👥 管理")
+    st.title("👥 メンバー管理")
     
     # --- パスワードチェック ---
     # セッションで認証状態を保持
