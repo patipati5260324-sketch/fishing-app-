@@ -449,9 +449,9 @@ def analysis_page():
         st.bar_chart(fish_counts)
 
     # with col2:
-        st.subheader("🏆 サイズランキング (TOP10)")
-        ranking = df.sort_values(by="size", ascending=False).head(10)
-        st.table(ranking[["fish", "size", "name", "place"]])#
+      #  st.subheader("🏆 サイズランキング (TOP10)")
+       # ranking = df.sort_values(by="size", ascending=False).head(10)
+        #st.table(ranking[["fish", "size", "name", "place"]])
 
     st.divider()
     st.subheader("📈 潮汐・気圧とサイズ")
