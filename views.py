@@ -257,50 +257,89 @@ def post_page():
 from utils import deg_to_win # 16方位変換関数をインポートに追加してください
 
 def weather_page():
-    st.title("🌊 港・地点別コンディション")
-    st.write("各地点の最新の気象情報と日出・日没時間を確認できます。")
+    st.title("⚓ 港・地点別コンディション")
+
+    # 1. 固定ポイント（デフォルト地点）
+    default_points = [
+        {"name": "秋田港", "lat": 39.75, "lon": 140.0, "memo": "基準地点"},
+        {"name": "船川港", "lat": 39.87, "lon": 139.85, "memo": "男鹿エリア"},
+        {"name": "能代港", "lat": 40.21, "lon": 140.01, "memo": "県北エリア"},
+    ]
+
+    # 2. 登録済みポイントを取得して合体
+    from database import get_registered_points
+    registered_df = get_registered_points()
     
-    locs = get_locs() # database.pyで取得した地点リスト
-    
-    # 画面をグリッド状に配置（3列）
-    cols = st.columns(3)
-    
-    for i, (name, coords) in enumerate(locs.items()):
-        # 列のインデックス（0, 1, 2）を計算して配置
-        with cols[i % 3]:
-            with st.container(border=True):
-                st.subheader(f"📍 {name}")
+    all_points = default_points.copy()
+    if not registered_df.empty:
+        for _, row in registered_df.iterrows():
+            all_points.append({
+                "name": row["name"],
+                "lat": row["lat"],
+                "lon": row["lon"],
+                "memo": row["memo"]
+            })
+
+    # 3. セレクトボックスで地点を選択
+    point_names = [p["name"] for p in all_points]
+    selected_name = st.selectbox("表示する地点を切り替え", point_names)
+
+    # 選択された地点データを特定
+    p = next((item for item in all_points if item["name"] == selected_name), None)
+
+    if p:
+        st.divider()
+        # あなたの utils.py に合わせて関数をインポート
+        from utils import get_jma_weather, deg_to_win, calc_moon_age, calc_tide
+        
+        with st.spinner(f"{p['name']} のデータを取得中..."):
+            w = get_jma_weather(p['lat'], p['lon'])
+            
+            if w:
+                # --- 表示セクション ---
+                st.subheader(f"📍 {p['name']} の現在の状況")
                 
-                # 天気APIからデータを取得
-                w = get_jma_weather(coords[0], coords[1])
+                # メインの4指標
+                m1, m2, m3, m4 = st.columns(4)
+                m1.metric("天気", w["desc"])
+                m2.metric("気温", f"{w['temp']}℃")
+                m3.metric("風速", f"{w['wind_speed']}m/s")
+                m4.metric("気圧", f"{w['pressure']}hPa")
                 
-                if w:
-                    # 1. 天気と気温
-                    st.write(f"### {w['desc']}")
-                    st.metric("気温", f"{w['temp']}°C")
+                # 詳細・潮汐情報
+                with st.container(border=True):
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        # 角度を方位（北西など）に変換
+                        wind_dir = deg_to_win(w["wind_deg"])
+                        # 月齢と潮汐を計算
+                        from datetime import datetime
+                        now = datetime.now()
+                        m_age = calc_moon_age(now)
+                        t_status = calc_tide(m_age)
+                        
+                        st.write(f"💨 **風向き:** {wind_dir} ")
+                        st.write(f"🌊 **潮汐:** {t_status} ")
                     
-                    # 2. 風の情報（風速と16方位）
-                    wind_label = deg_to_win(w['wind_deg'])
-                    st.write(f"💨 **風:** {wind_label} {w['wind_speed']}m/s")
-                    
-                    # 3. 気圧
-                    st.write(f"🌡 **気圧:** {w['pressure']}hPa")
-                    
-                    st.divider()
-                    
-                    # 4. 日出・日没（時間の文字列から時刻部分だけ抽出）
-                    try:
-                        sr = datetime.fromisoformat(w['sunrise']).strftime("%H:%M")
-                        ss = datetime.fromisoformat(w['sunset']).strftime("%H:%M")
-                        st.write(f"🌅 **日出:** {sr} | 🌇 **日没:** {ss}")
-                    except:
-                        st.write("🌅 **日出/日没:** データ取得不可")
-                else:
-                    st.error("天気データが取得できませんでした。")
-                    
-                # 地図へのリンク（任意）
-                google_map_url = f"https://www.google.com/maps?q={coords[0]},{coords[1]}"
-                st.link_button(f"🔗 {name}を地図で見る", google_map_url)
+                    with c2:
+                        # sunrise/sunset は文字列のまま、または整形して表示
+                        sr = w['sunrise'].split("T")[-1] if w['sunrise'] else "--:--"
+                        ss = w['sunset'].split("T")[-1] if w['sunset'] else "--:--"
+                        st.write(f"🌅 **日の出:** {sr}")
+                        st.write(f"🌇 **日の入り:** {ss}")
+
+                if p["memo"]:
+                    st.info(f"💡 地点メモ: {p['memo']}")
+
+                # 場所の確認用地図
+                st.caption("地点の確認")
+                import folium
+                from streamlit_folium import st_folium
+                m = folium.Map(location=[p['lat'], p['lon']], zoom_start=12)
+                folium.Marker([p['lat'], p['lon']], popup=p['name']).add_to(m)
+                st_folium(m, width="100%", height=250, key=f"map_view_{p['name']}")
+            else:
+                st.error("気象データの取得に失敗しました。")
 
 # --- ここで views.py の中身が一旦完成です ---
 
